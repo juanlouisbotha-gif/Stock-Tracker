@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Stock Tracker">
+<title>Stock Tracker</title>
+<link rel="manifest" id="manifest-placeholder">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --bg:#ffffff;--bg2:#f5f5f4;--bg3:#eeede9;
+    --text:#1a1a1a;--text2:#666;--text3:#999;
+    --border:#e0dfd9;--border2:#ccc;
+    --green:#1D9E75;--green-bg:#EAF3DE;--green-text:#3B6D11;
+    --red:#E24B4A;--red-bg:#FCEBEB;--red-text:#A32D2D;
+    --blue:#185FA5;--blue-bg:#E6F1FB;--blue-text:#0C447C;
+    --radius:10px;--radius-lg:14px;
+  }
+  @media(prefers-color-scheme:dark){
+    :root{
+      --bg:#1c1c1e;--bg2:#2c2c2e;--bg3:#3a3a3c;
+      --text:#f2f2f7;--text2:#aeaeb2;--text3:#636366;
+      --border:#3a3a3c;--border2:#48484a;
+      --green-bg:#0a3d2a;--green-text:#5DCAA5;
+      --red-bg:#3d0f0f;--red-text:#f09595;
+      --blue-bg:#0c2240;--blue-text:#85B7EB;
+    }
+  }
+  html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px}
+  .app{display:flex;flex-direction:column;height:100vh;max-width:480px;margin:0 auto}
+
+  /* Header */
+  .header{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 8px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0}
+  .header-title{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:600}
+  .header-title svg{width:24px;height:24px;stroke:var(--text)}
+  .export-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid var(--border2);border-radius:20px;background:transparent;color:var(--text);font-size:13px;font-weight:500;cursor:pointer}
+  .export-btn:active{background:var(--bg2)}
+
+  /* Tabs */
+  .tabs{display:flex;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0}
+  .tab{flex:1;padding:12px 4px 10px;border:none;background:transparent;color:var(--text3);font-size:11px;font-weight:500;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;letter-spacing:0.02em}
+  .tab svg{width:22px;height:22px;stroke:currentColor;stroke-width:1.8;fill:none}
+  .tab.active{color:var(--blue)}
+  .tab.active::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:2px;background:var(--blue);border-radius:2px 2px 0 0}
+
+  /* Scroll content */
+  .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .section{display:none;padding:16px}
+  .section.active{display:block}
+
+  /* Cards */
+  .card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:14px}
+  .card-title{font-size:14px;font-weight:600;margin-bottom:14px;color:var(--text)}
+
+  /* Form */
+  label{font-size:13px;color:var(--text2);display:block;margin-bottom:6px;margin-top:12px}
+  label:first-child{margin-top:0}
+  input,select,textarea{width:100%;padding:11px 14px;border:1px solid var(--border2);border-radius:var(--radius);font-size:16px;background:var(--bg);color:var(--text);font-family:inherit;appearance:none;-webkit-appearance:none}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,95,165,0.12)}
+  select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+
+  /* Buttons */
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border:1px solid var(--border2);border-radius:var(--radius);background:transparent;color:var(--text);font-size:16px;font-weight:500;cursor:pointer;margin-top:14px;font-family:inherit}
+  .btn:active{transform:scale(0.98);background:var(--bg2)}
+  .btn-primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+  .btn-primary:active{background:var(--text2)}
+  .btn-green{background:var(--green);color:#fff;border-color:var(--green)}
+  .btn-sm{width:auto;padding:7px 14px;font-size:13px;margin-top:0}
+  .btn-danger{color:var(--red);border-color:var(--red)}
+
+  /* Scanner */
+  .scanner-area{border:2px dashed var(--border2);border-radius:var(--radius-lg);padding:28px 16px;text-align:center;cursor:pointer;background:var(--bg2);margin-bottom:14px;transition:border-color 0.2s}
+  .scanner-area:active{border-color:var(--blue)}
+  .scanner-area svg{width:52px;height:52px;stroke:var(--text3);stroke-width:1.5;fill:none;margin-bottom:10px}
+  .scanner-area h3{font-size:16px;font-weight:500;margin-bottom:4px}
+  .scanner-area p{font-size:13px;color:var(--text2)}
+  #video-wrap{position:relative;margin-bottom:14px;display:none;border-radius:var(--radius-lg);overflow:hidden;background:#000}
+  #qr-video{width:100%;display:block;max-height:260px;object-fit:cover}
+  .scan-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:170px;height:170px;border:2.5px solid var(--green);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,0.45)}
+  .scan-label{position:absolute;bottom:12px;left:0;right:0;text-align:center;color:#fff;font-size:13px;background:rgba(0,0,0,0.45);padding:6px}
+  .stop-scan-btn{position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.55);border:none;color:#fff;border-radius:20px;padding:6px 12px;font-size:13px;cursor:pointer}
+
+  /* Found item preview */
+  .found-box{display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border-radius:var(--radius);padding:12px 14px;margin-bottom:2px}
+  .found-name{font-weight:600;font-size:15px}
+  .found-sub{font-size:13px;color:var(--text2);margin-top:2px}
+  .badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500}
+  .badge-ok{background:var(--green-bg);color:var(--green-text)}
+  .badge-low{background:var(--red-bg);color:var(--red-text)}
+  .badge-info{background:var(--blue-bg);color:var(--blue-text)}
+
+  /* Stock list */
+  .stock-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border)}
+  .stock-row:last-child{border-bottom:none}
+  .stock-name{font-weight:500;font-size:15px}
+  .stock-unit{font-size:12px;color:var(--text2);margin-top:2px}
+  .stock-qty{font-size:22px;font-weight:600}
+  .stock-qty.ok{color:var(--green)}
+  .stock-qty.low{color:var(--red)}
+
+  /* Log */
+  .log-row{padding:12px 0;border-bottom:1px solid var(--border)}
+  .log-row:last-child{border-bottom:none}
+  .log-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+  .log-item{font-weight:500;font-size:15px}
+  .log-used{font-weight:600;color:var(--red)}
+  .log-meta{font-size:12px;color:var(--text2)}
+
+  /* Manage */
+  .manage-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+  .manage-row:last-child{border-bottom:none}
+  .manage-info{font-size:13px;color:var(--text2);margin-top:2px}
+  .del-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--border2);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+  .del-btn svg{width:16px;height:16px;stroke:var(--red);fill:none}
+  .del-btn:active{background:var(--red-bg)}
+
+  /* Rows */
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row2 label{margin-top:0}
+
+  /* Toast */
+  #toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(26,26,26,0.92);color:#fff;padding:10px 20px;border-radius:24px;font-size:14px;font-weight:500;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center}
+
+  /* Empty */
+  .empty{text-align:center;padding:36px 0;color:var(--text3);font-size:14px}
+  .empty svg{width:40px;height:40px;stroke:var(--text3);fill:none;margin:0 auto 10px;display:block;stroke-width:1.5}
+
+  /* Divider */
+  .divider{text-align:center;color:var(--text3);font-size:13px;margin:8px 0;display:flex;align-items:center;gap:8px}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+  .section-head{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+      Stock Tracker
+    </div>
+    <button class="export-btn" onclick="exportUsageCSV()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export
+    </button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('scan')" id="tab-scan">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg>
+      Scan
+    </button>
+    <button class="tab" onclick="showTab('stock')" id="tab-stock">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Stock
+    </button>
+    <button class="tab" onclick="showTab('log')" id="tab-log">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Log
+    </button>
+    <button class="tab" onclick="showTab('manage')" id="tab-manage">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      Manage
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- SCAN -->
+    <div id="sec-scan" class="section active">
+      <!-- Camera -->
+      <div id="video-wrap">
+        <video id="qr-video" playsinline autoplay muted></video>
+        <div class="scan-frame"></div>
+        <div class="scan-label">Point at item QR code</div>
+        <button class="stop-scan-btn" onclick="stopCamera()">✕ Cancel</button>
+      </div>
+
+      <div class="scanner-area" id="scanner-tap" onclick="startCamera()">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/>
+          <line x1="14" y1="14" x2="14" y2="14.01"/><line x1="17" y1="14" x2="17" y2="14.01"/>
+          <line x1="20" y1="14" x2="20" y2="14.01"/><line x1="14" y1="17" x2="14" y2="17.01"/>
+          <line x1="17" y1="17" x2="20" y2="17"/><line x1="20" y1="20" x2="20" y2="20.01"/>
+          <line x1="14" y1="20" x2="17" y2="20"/>
+        </svg>
+        <h3>Tap to scan QR code</h3>
+        <p>Uses your camera to read the item QR</p>
+      </div>
+
+      <div class="divider">or select manually</div>
+
+      <div class="card" style="margin-top:14px">
+        <label>Item</label>
+        <select id="manual-item" onchange="onItemSelect()">
+          <option value="">Choose item...</option>
+        </select>
+
+        <div id="found-box" style="display:none;margin-bottom:12px" class="found-box">
+          <div>
+            <div class="found-name" id="found-name"></div>
+            <div class="found-sub" id="found-sub"></div>
+          </div>
+          <span class="badge" id="found-badge"></span>
+        </div>
+
+        <label>Quantity used</label>
+        <input type="number" id="use-qty" min="1" value="1" inputmode="numeric">
+
+        <label>Job number</label>
+        <input type="text" id="job-num" placeholder="e.g. JOB-001" autocapitalize="characters">
+
+        <label>Notes <span style="color:var(--text3)">(optional)</span></label>
+        <input type="text" id="use-notes" placeholder="e.g. Site B, floor 2">
+
+        <button class="btn btn-green" onclick="logUsage()">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Log usage
+        </button>
+      </div>
+    </div>
+
+    <!-- STOCK -->
+    <div id="sec-stock" class="section">
+      <div class="card">
+        <div id="stock-list"></div>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div id="sec-log" class="section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="section-head" style="margin:0">Usage history</div>
+        <button class="btn btn-sm btn-danger" onclick="clearLog()">Clear all</button>
+      </div>
+      <div class="card">
+        <div id="log-list"></div>
+      </div>
+    </div>
+
+    <!-- MANAGE -->
+    <div id="sec-manage" class="section">
+      <div class="card">
+        <div class="card-title">Add new item</div>
+        <label>Item code <span style="color:var(--text3)">(matches QR code)</span></label>
+        <input type="text" id="new-name" placeholder="e.g. ESC-10B" autocapitalize="characters">
+        <label>Description <span style="color:var(--text3)">(optional)</span></label>
+        <input type="text" id="new-desc" placeholder="e.g. Equal straight connector 10mm">
+        <div class="row2" style="margin-top:12px">
+          <div>
+            <label>Unit</label>
+            <input type="text" id="new-unit" placeholder="each / roll / m">
+          </div>
+          <div>
+            <label>Opening stock</label>
+            <input type="number" id="new-qty" placeholder="0" min="0" inputmode="numeric">
+          </div>
+        </div>
+        <label>Low stock alert at</label>
+        <input type="number" id="new-low" placeholder="e.g. 10" min="0" inputmode="numeric">
+        <button class="btn btn-primary" onclick="addItem()">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add item
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Restock item</div>
+        <label>Item</label>
+        <select id="restock-item">
+          <option value="">Choose item...</option>
+        </select>
+        <label>Quantity to add</label>
+        <input type="number" id="restock-qty" min="1" value="1" inputmode="numeric">
+        <button class="btn btn-primary" onclick="restockItem()">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+          Restock
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Current items</div>
+        <div id="manage-list"></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px">
+        <button class="btn btn-sm" style="width:100%;margin-top:0;padding:12px 8px;font-size:13px" onclick="exportUsageCSV()">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Usage CSV
+        </button>
+        <button class="btn btn-sm" style="width:100%;margin-top:0;padding:12px 8px;font-size:13px" onclick="exportStockCSV()">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Stock CSV
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const ITEMS_KEY = 'st_items';
+const LOG_KEY   = 'st_log';
+
+const DEFAULT_ITEMS = [
+  {id:'41212204', name:'L-Push-in-fitting M5 QS6 QSML-M5-6-100', unit:'each', qty:5, low:2},
+  {id:'41212205', name:'L-Push-in/threaded-fitting QSL-B-1/8-6', unit:'each', qty:10, low:3},
+  {id:'41212271', name:'Plug connection QSM-6', unit:'each', qty:10, low:3},
+  {id:'41216007', name:'Manometer d=40mm 16bar G1/8 MA-40-16-1/8', unit:'each', qty:1, low:1},
+  {id:'41217132', name:'One-way flow control valve GRLZ-1/8-QS6D', unit:'each', qty:2, low:1},
+  {id:'41217141', name:'One-way flow control valve GR-QS-6', unit:'each', qty:2, low:1},
+  {id:'41218708', name:'Lubr.attachm. f.LOE-1/4-D-MINI LOE-3/8-D', unit:'each', qty:2, low:1},
+  {id:'41218901', name:'Lubricator 45ccm w.conne.plate LOE-1/4-D', unit:'each', qty:1, low:1},
+  {id:'72924641', name:'V-ribbed belt PJ 13 723', unit:'each', qty:2, low:1},
+  {id:'3876771RSC', name:'Olflex classic 110 YY 4G 1.5mm (Per 1m)', unit:'m', qty:20, low:5},
+  {id:'6004', name:'6004 Bearing', unit:'each', qty:4, low:2},
+  {id:'6202', name:'6202 Bearing', unit:'each', qty:2, low:1},
+  {id:'6205', name:'6205 Bearing', unit:'each', qty:2, low:1},
+  {id:'CABLE0.5X2-PVC', name:'CABLE 0.5X2 PVC', unit:'m', qty:10, low:3},
+  {id:'CABLE0.5X3-PVC', name:'CABLE 0.5X3 PVC', unit:'m', qty:10, low:3},
+  {id:'ESC-10B', name:'Equal straight connector 10mm', unit:'each', qty:10, low:3},
+  {id:'ESC-4B', name:'Equal straight connector 4mm', unit:'each', qty:10, low:3},
+  {id:'ESC-8B', name:'Equal straight connector 8mm', unit:'each', qty:10, low:3},
+  {id:'41212265', name:'Plug connection 6a-4i QS-6H-4', unit:'each', qty:5, low:2},
+  {id:'41212266', name:'Plug connection 8a-4i QS-8H-4', unit:'each', qty:5, low:2},
+  {id:'41212267', name:'Plug connection 8a-6i QS-8H-6', unit:'each', qty:5, low:2},
+  {id:'41212268', name:'Plug connection 10a-6i QS-10H-6', unit:'each', qty:2, low:1},
+  {id:'41212269', name:'Plug connection 10a-8i QS-10H-8', unit:'each', qty:2, low:1}
+];
+
+let items = load(ITEMS_KEY) || JSON.parse(JSON.stringify(DEFAULT_ITEMS));
+let usageLog = load(LOG_KEY) || [];
+let cameraStream = null;
+let scanInterval = null;
+let currentTab = 'scan';
+
+function load(k){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):null; }catch(e){return null;} }
+function save(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+function showTab(t){
+  if(t!=='scan') stopCamera();
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+t).classList.add('active');
+  currentTab=t;
+  if(t==='stock') renderStock();
+  if(t==='log')   renderLog();
+  if(t==='manage'){renderManage();populateRestockSelect();}
+}
+
+// ── Item helpers ───────────────────────────────────────────────────────────
+function getItem(id){ return items.find(i=>i.id===id); }
+
+function populateSelect(selId, label='Choose item...'){
+  const sel=document.getElementById(selId);
+  if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML=`<option value="">${label}</option>`;
+  items.forEach(i=>{
+    const o=document.createElement('option');
+    o.value=i.id; o.textContent=i.id+(i.name?' — '+i.name:'')+' ('+i.qty+' '+i.unit+')';
+    sel.appendChild(o);
+  });
+  if(cur) sel.value=cur;
+}
+
+function populateRestockSelect(){ populateSelect('restock-item','Choose item...'); }
+
+function onItemSelect(){
+  const id=document.getElementById('manual-item').value;
+  showFoundBox(id);
+}
+
+function showFoundBox(id){
+  const box=document.getElementById('found-box');
+  if(!id){box.style.display='none';return;}
+  const item=getItem(id);
+  if(!item){box.style.display='none';return;}
+  document.getElementById('found-name').textContent=item.id;
+  document.getElementById('found-sub').textContent=(item.name?item.name+' · ':'')+'In stock: '+item.qty+' '+item.unit;
+  const badge=document.getElementById('found-badge');
+  if(item.qty<=item.low){ badge.className='badge badge-low'; badge.textContent='Low stock'; }
+  else { badge.className='badge badge-ok'; badge.textContent='In stock'; }
+  box.style.display='flex';
+}
+
+// ── Log usage ─────────────────────────────────────────────────────────────
+function logUsage(){
+  const id  = document.getElementById('manual-item').value;
+  const qty = parseInt(document.getElementById('use-qty').value)||0;
+  const job = document.getElementById('job-num').value.trim();
+  const notes = document.getElementById('use-notes').value.trim();
+
+  if(!id)  { toast('Please select or scan an item'); return; }
+  if(qty<1){ toast('Quantity must be at least 1');   return; }
+  if(!job) { toast('Please enter a job number');     return; }
+
+  const item=getItem(id);
+  if(qty>item.qty && !confirm('Only '+item.qty+' '+item.unit+' in stock. Log anyway?')) return;
+
+  item.qty = Math.max(0, item.qty-qty);
+  usageLog.unshift({ id:item.id, name:item.name, unit:item.unit, qty, job, notes, ts:new Date().toISOString() });
+  save(ITEMS_KEY, items);
+  save(LOG_KEY, usageLog);
+
+  document.getElementById('use-qty').value=1;
+  document.getElementById('job-num').value='';
+  document.getElementById('use-notes').value='';
+  document.getElementById('manual-item').value='';
+  document.getElementById('found-box').style.display='none';
+  populateSelect('manual-item');
+
+  const warning = item.qty<=item.low ? ' ⚠ Low stock!' : '';
+  toast('Logged: '+qty+' × '+item.id+warning);
+}
+
+// ── Stock ──────────────────────────────────────────────────────────────────
+function renderStock(){
+  const el=document.getElementById('stock-list');
+  if(!items.length){ el.innerHTML=emptyState('No items yet — add them in Manage'); return; }
+  el.innerHTML=items.map(i=>`
+    <div class="stock-row">
+      <div>
+        <div class="stock-name">${esc(i.id)}</div>
+        <div class="stock-unit">${i.name?esc(i.name)+' · ':''}${esc(i.unit)} · alert ≤${i.low}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="stock-qty ${i.qty<=i.low?'low':'ok'}">${i.qty}</div>
+        ${i.qty<=i.low?'<span class="badge badge-low" style="font-size:10px">Low</span>':''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Log ────────────────────────────────────────────────────────────────────
+function renderLog(){
+  const el=document.getElementById('log-list');
+  if(!usageLog.length){ el.innerHTML=emptyState('No usage logged yet'); return; }
+  el.innerHTML=usageLog.map(l=>{
+    const d=new Date(l.ts);
+    const ds=d.toLocaleDateString('en-ZA')+' '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+    return`<div class="log-row">
+      <div class="log-top">
+        <span class="log-item">${esc(l.id)}</span>
+        <span class="log-used">−${l.qty} ${esc(l.unit)}</span>
+      </div>
+      <div class="log-meta">${l.name?esc(l.name)+' · ':''}Job: ${esc(l.job)} · ${ds}${l.notes?' · '+esc(l.notes):''}</div>
+    </div>`;
+  }).join('');
+}
+
+function clearLog(){
+  if(!usageLog.length){ toast('Log is already empty'); return; }
+  if(!confirm('Clear all usage history? This cannot be undone.')) return;
+  usageLog=[];
+  save(LOG_KEY, usageLog);
+  renderLog();
+  toast('Log cleared');
+}
+
+// ── Manage ─────────────────────────────────────────────────────────────────
+function renderManage(){
+  populateSelect('manual-item');
+  const el=document.getElementById('manage-list');
+  if(!items.length){ el.innerHTML=emptyState('No items yet'); return; }
+  el.innerHTML=items.map(i=>`
+    <div class="manage-row">
+      <div>
+        <div style="font-weight:500;font-size:15px">${esc(i.id)}</div>
+        <div class="manage-info">${i.name?esc(i.name)+' · ':''}${i.qty} ${esc(i.unit)} · alert at ${i.low}</div>
+      </div>
+      <button class="del-btn" onclick="removeItem('${i.id}')" aria-label="Delete ${esc(i.id)}">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      </button>
+    </div>
+  `).join('');
+}
+
+function addItem(){
+  const code = document.getElementById('new-name').value.trim();
+  const desc = document.getElementById('new-desc').value.trim();
+  const unit = document.getElementById('new-unit').value.trim()||'each';
+  const qty  = parseInt(document.getElementById('new-qty').value)||0;
+  const low  = parseInt(document.getElementById('new-low').value)||5;
+  if(!code){ toast('Please enter an item code'); return; }
+  if(items.find(i=>i.id.toLowerCase()===code.toLowerCase())){ toast('Item code already exists'); return; }
+  items.push({ id:code, name:desc, unit, qty, low });
+  save(ITEMS_KEY, items);
+  document.getElementById('new-name').value='';
+  document.getElementById('new-desc').value='';
+  document.getElementById('new-unit').value='';
+  document.getElementById('new-qty').value='';
+  document.getElementById('new-low').value='';
+  renderManage();
+  populateRestockSelect();
+  toast('Added: '+code);
+}
+
+function removeItem(id){
+  const item=getItem(id);
+  if(!confirm('Remove "'+item.id+'" from stock list?')) return;
+  items=items.filter(i=>i.id!==id);
+  save(ITEMS_KEY, items);
+  renderManage();
+  populateRestockSelect();
+  toast('Removed: '+item.id);
+}
+
+function restockItem(){
+  const id  = document.getElementById('restock-item').value;
+  const qty = parseInt(document.getElementById('restock-qty').value)||0;
+  if(!id)  { toast('Please select an item'); return; }
+  if(qty<1){ toast('Quantity must be at least 1'); return; }
+  const item=getItem(id);
+  item.qty+=qty;
+  save(ITEMS_KEY, items);
+  document.getElementById('restock-qty').value=1;
+  renderManage();
+  populateRestockSelect();
+  toast('Restocked: +'+qty+' '+item.unit+' of '+item.id);
+}
+
+// ── Camera / QR ────────────────────────────────────────────────────────────
+async function startCamera(){
+  const wrap=document.getElementById('video-wrap');
+  const tap =document.getElementById('scanner-tap');
+  const vid =document.getElementById('qr-video');
+  tap.style.display='none'; wrap.style.display='block';
+  try{
+    cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
+    vid.srcObject=cameraStream;
+    await vid.play();
+    const canvas=document.createElement('canvas');
+    const ctx=canvas.getContext('2d');
+    scanInterval=setInterval(()=>{
+      if(vid.readyState===vid.HAVE_ENOUGH_DATA){
+        canvas.width=vid.videoWidth; canvas.height=vid.videoHeight;
+        ctx.drawImage(vid,0,0);
+        if(typeof jsQR==='undefined') return;
+        const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+        const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+        if(code){ stopCamera(); handleQR(code.data); }
+      }
+    },250);
+  }catch(e){
+    stopCamera();
+    toast('Camera unavailable — use manual select');
+  }
+}
+
+function stopCamera(){
+  if(scanInterval){ clearInterval(scanInterval); scanInterval=null; }
+  if(cameraStream){ cameraStream.getTracks().forEach(t=>t.stop()); cameraStream=null; }
+  const vid=document.getElementById('qr-video');
+  vid.srcObject=null;
+  document.getElementById('video-wrap').style.display='none';
+  document.getElementById('scanner-tap').style.display='block';
+}
+
+function handleQR(data){
+  // QR code should contain item id or exact item name
+  const item=items.find(i=>i.id===data||i.name.toLowerCase()===data.toLowerCase());
+  if(item){
+    document.getElementById('manual-item').value=item.id;
+    showFoundBox(item.id);
+    toast('Scanned: '+item.name);
+    document.getElementById('use-qty').focus();
+  } else {
+    toast('QR not recognised. Select manually.');
+  }
+}
+
+// ── Export ─────────────────────────────────────────────────────────────────
+function exportUsageCSV(){
+  if(!usageLog.length){ toast('No usage logged yet'); return; }
+  const rows=[['Item Code','Description','Date','Time','Qty','Unit','Job Number','Notes']];
+  usageLog.forEach(l=>{
+    const d=new Date(l.ts);
+    rows.push([l.id,l.name||'',d.toLocaleDateString('en-ZA'),d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}),l.qty,l.unit,l.job,l.notes||'']);
+  });
+  dlCSV(rows,'usage_log_'+today()+'.csv');
+}
+
+function exportStockCSV(){
+  if(!items.length){ toast('No items to export'); return; }
+  const rows=[['Item Code','Description','Unit','Current Stock','Low Alert']];
+  items.forEach(i=>rows.push([i.id,i.name||'',i.unit,i.qty,i.low]));
+  dlCSV(rows,'stock_levels_'+today()+'.csv');
+}
+
+function dlCSV(rows,filename){
+  const csv=rows.map(r=>r.map(c=>'"'+(c+'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+  toast('Downloaded: '+filename);
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function today(){ return new Date().toISOString().slice(0,10); }
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function emptyState(msg){ return`<div class="empty"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>${msg}</div>`; }
+
+let toastTimer;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.opacity='1';
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.style.opacity='0',2800);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+populateSelect('manual-item');
+
+// PWA Service Worker (inline, registered via blob)
+if('serviceWorker' in navigator){
+  const swCode=`
+self.addEventListener('install',e=>self.skipWaiting());
+self.addEventListener('activate',e=>clients.claim());
+self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>new Response('Offline',{status:503}))));
+  `;
+  const blob=new Blob([swCode],{type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+}
+</script>
+</body>
+</html>
